@@ -44,7 +44,7 @@ jobs:
           echo "Validating target branch '$TARGET_BRANCH'..."
 
           # Validate target branch exists
-          if ! gh api "repos/:owner/:repo/git/refs/heads/$TARGET_BRANCH" >/dev/null 2>&1; then
+          if ! gh api "repos/:owner/:repo/git/refs/heads/$TARGET_BRANCH" | cat >/dev/null 2>&1; then
             echo "❌ Error: Branch '$TARGET_BRANCH' does not exist"
             exit 1
           fi
