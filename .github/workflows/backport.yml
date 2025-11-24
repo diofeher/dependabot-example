@@ -34,7 +34,7 @@ jobs:
           echo "Validating PR #$PR_NUMBER..."
 
           # Validate PR exists and is valid
-          if ! gh pr view "$PR_NUMBER" --state closed --json number,state >/dev/null 2>&1; then
+          if ! gh pr view "$PR_NUMBER" --json number,state >/dev/null 2>&1; then
             echo "❌ Error: PR #$PR_NUMBER not found or invalid"
             exit 1
           fi
