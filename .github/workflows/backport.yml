@@ -2,6 +2,15 @@ name: Backport
 
 on:
   workflow_dispatch:
+    inputs:
+      pull_request:
+        description: "URL for the pull request"
+        required: true
+        type: string
+      branch:
+        description: "Target branch"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,23 +21,21 @@ jobs:
     name: Backport PR
     runs-on: ubuntu-latest
     steps:
-      - name: Extract backport target branch
+      - name: Extract PR number and set up
         id: extract-branch
         run: |
-          LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
-          echo "Labels: $LABELS"
+          # Extract PR number from URL
+          PR_URL="${{ inputs.pull_request }}"
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$' || echo "$PR_URL")
 
-          # Find backport label (format: backport-to-<branch>)
-          TARGET_BRANCH=$(echo "$LABELS" | jq -r '.[] | select(startswith("backport-to-")) | sub("backport-to-"; "")')
+          echo "PR Number: $PR_NUMBER"
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
 
-          if [ -z "$TARGET_BRANCH" ]; then
-            echo "No backport label found"
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "Found target branch: $TARGET_BRANCH"
-            echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
+          # Use the branch input provided by the user
+          TARGET_BRANCH="${{ inputs.branch }}"
+          echo "Target branch: $TARGET_BRANCH"
+          echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Checkout repository
         if: steps.extract-branch.outputs.skip != 'true'
@@ -46,23 +53,23 @@ jobs:
       - name: Create backport branch and cherry-pick
         if: steps.extract-branch.outputs.skip != 'true'
         id: cherry-pick
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
 
+          PR_NUMBER="${{ steps.extract-branch.outputs.pr_number }}"
           TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
-          PR_NUMBER="${{ github.event.pull_request.number }}"
           BACKPORT_BRANCH="backport-${PR_NUMBER}-to-${TARGET_BRANCH}"
+
+          echo "Processing PR #$PR_NUMBER for backport to $TARGET_BRANCH"
 
           # Fetch and checkout target branch
           git fetch origin "$TARGET_BRANCH"
           git checkout -b "$BACKPORT_BRANCH" "origin/$TARGET_BRANCH"
 
-          # Get the merge commit SHA
-          MERGE_COMMIT="${{ github.event.pull_request.merge_commit_sha }}"
-
-          # Get all commits from the PR (excluding the merge commit itself)
-          # We use the PR base and head to find the commits
-          PR_COMMITS=$(git log --reverse --pretty=format:"%H" origin/${{ github.event.pull_request.base.ref }}..$MERGE_COMMIT^)
+          # Get all commits from the PR using gh CLI
+          PR_COMMITS=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[].oid')
 
           echo "Commits to cherry-pick:"
           echo "$PR_COMMITS"
@@ -97,8 +104,11 @@ jobs:
         run: |
           TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
           BACKPORT_BRANCH="${{ steps.cherry-pick.outputs.branch }}"
-          ORIGINAL_PR="${{ github.event.pull_request.number }}"
-          ORIGINAL_TITLE="${{ github.event.pull_request.title }}"
+          ORIGINAL_PR="${{ steps.extract-branch.outputs.pr_number }}"
+
+          # Get original PR details using gh CLI
+          ORIGINAL_TITLE=$(gh pr view "$ORIGINAL_PR" --json title --jq '.title')
+          ORIGINAL_AUTHOR=$(gh pr view "$ORIGINAL_PR" --json author --jq '.author.login')
 
           gh pr create \
             --title "[Backport to $TARGET_BRANCH] $ORIGINAL_TITLE" \
@@ -107,7 +117,7 @@ jobs:
           ---
 
           Original PR: #$ORIGINAL_PR
-          Original Author: @${{ github.event.pull_request.user.login }}
+          Original Author: @$ORIGINAL_AUTHOR
 
           This PR was automatically created by the backport workflow." \
             --base "$TARGET_BRANCH" \
@@ -121,8 +131,9 @@ jobs:
         run: |
           TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
           BACKPORT_BRANCH="${{ steps.cherry-pick.outputs.branch }}"
+          ORIGINAL_PR="${{ steps.extract-branch.outputs.pr_number }}"
 
-          gh pr comment ${{ github.event.pull_request.number }} \
+          gh pr comment "$ORIGINAL_PR" \
             --body "✅ Backport PR created successfully for branch \`$TARGET_BRANCH\`: branch \`$BACKPORT_BRANCH\`"
 
       - name: Comment on original PR (conflict)
@@ -131,6 +142,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
+          ORIGINAL_PR="${{ steps.extract-branch.outputs.pr_number }}"
 
-          gh pr comment ${{ github.event.pull_request.number }} \
+          gh pr comment "$ORIGINAL_PR" \
             --body "❌ Automated backport to \`$TARGET_BRANCH\` failed due to conflicts. Please backport manually."
