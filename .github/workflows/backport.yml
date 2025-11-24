@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       pull_request:
-        description: "URL for the pull request"
+        description: "Number of the pull request"
         required: true
-        type: string
+        type: number
       branch:
         description: "Target branch"
         required: true
@@ -24,12 +24,8 @@ jobs:
       - name: Extract PR number and set up
         id: extract-branch
         run: |
-          # Extract PR number from URL
-          PR_URL="${{ inputs.pull_request }}"
-          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$' || echo "$PR_URL")
-
           echo "PR Number: $PR_NUMBER"
-          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "pr_number=${{ inputs.pull_request }}" >> $GITHUB_OUTPUT
 
           # Use the branch input provided by the user
           TARGET_BRANCH="${{ inputs.branch }}"
