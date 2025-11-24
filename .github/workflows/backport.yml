@@ -121,8 +121,7 @@ jobs:
 
           This PR was automatically created by the backport workflow." \
             --base "$TARGET_BRANCH" \
-            --head "$BACKPORT_BRANCH" \
-            --label "backport"
+            --head "$BACKPORT_BRANCH"
 
       - name: Comment on original PR (success)
         if: steps.extract-branch.outputs.skip != 'true' && steps.cherry-pick.outputs.conflict != 'true'
