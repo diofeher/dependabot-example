@@ -31,23 +31,19 @@ jobs:
           TARGET_BRANCH="${{ inputs.branch }}"
           echo "Target branch: $TARGET_BRANCH"
           echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
-          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Checkout repository
-        if: steps.extract-branch.outputs.skip != 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure git
-        if: steps.extract-branch.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Create backport branch and cherry-pick
-        if: steps.extract-branch.outputs.skip != 'true'
         id: cherry-pick
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,7 +90,7 @@ jobs:
           echo "conflict=false" >> $GITHUB_OUTPUT
 
       - name: Create backport PR
-        if: steps.extract-branch.outputs.skip != 'true' && steps.cherry-pick.outputs.conflict != 'true'
+        if: steps.cherry-pick.outputs.conflict != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -120,7 +116,7 @@ jobs:
             --head "$BACKPORT_BRANCH"
 
       - name: Comment on original PR (success)
-        if: steps.extract-branch.outputs.skip != 'true' && steps.cherry-pick.outputs.conflict != 'true'
+        if: steps.cherry-pick.outputs.conflict != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -132,7 +128,7 @@ jobs:
             --body "✅ Backport PR created successfully for branch \`$TARGET_BRANCH\`: branch \`$BACKPORT_BRANCH\`"
 
       - name: Comment on original PR (conflict)
-        if: steps.extract-branch.outputs.skip != 'true' && steps.cherry-pick.outputs.conflict == 'true'
+        if: steps.cherry-pick.outputs.conflict == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
