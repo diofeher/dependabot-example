@@ -21,15 +21,38 @@ jobs:
     name: Backport PR
     runs-on: ubuntu-latest
     steps:
-      - name: Extract PR number and set up
+      - name: Set up
         id: extract-branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "PR Number: $PR_NUMBER"
-          echo "pr_number=${{ inputs.pull_request }}" >> $GITHUB_OUTPUT
+          set -e
 
-          # Use the branch input provided by the user
+          PR_NUMBER="${{ inputs.pull_request }}"
           TARGET_BRANCH="${{ inputs.branch }}"
-          echo "Target branch: $TARGET_BRANCH"
+
+          echo "Validating PR #$PR_NUMBER..."
+
+          # Validate PR exists and is valid
+          if ! gh pr view "$PR_NUMBER" --json number,state >/dev/null 2>&1; then
+            echo "❌ Error: PR #$PR_NUMBER not found or invalid"
+            exit 1
+          fi
+
+          PR_STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
+          echo "✅ PR #$PR_NUMBER exists (state: $PR_STATE)"
+
+          echo "Validating target branch '$TARGET_BRANCH'..."
+
+          # Validate target branch exists
+          if ! gh api "repos/:owner/:repo/git/refs/heads/$TARGET_BRANCH" >/dev/null 2>&1; then
+            echo "❌ Error: Branch '$TARGET_BRANCH' does not exist"
+            exit 1
+          fi
+
+          echo "✅ Branch '$TARGET_BRANCH' exists"
+
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
 
       - name: Checkout repository
