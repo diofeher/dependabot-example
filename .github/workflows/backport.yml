@@ -1,0 +1,136 @@
+name: Backport
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backport:
+    name: Backport PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract backport target branch
+        id: extract-branch
+        run: |
+          LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          echo "Labels: $LABELS"
+
+          # Find backport label (format: backport-to-<branch>)
+          TARGET_BRANCH=$(echo "$LABELS" | jq -r '.[] | select(startswith("backport-to-")) | sub("backport-to-"; "")')
+
+          if [ -z "$TARGET_BRANCH" ]; then
+            echo "No backport label found"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Found target branch: $TARGET_BRANCH"
+            echo "target_branch=$TARGET_BRANCH" >> $GITHUB_OUTPUT
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout repository
+        if: steps.extract-branch.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        if: steps.extract-branch.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create backport branch and cherry-pick
+        if: steps.extract-branch.outputs.skip != 'true'
+        id: cherry-pick
+        run: |
+          set -e
+
+          TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          BACKPORT_BRANCH="backport-${PR_NUMBER}-to-${TARGET_BRANCH}"
+
+          # Fetch and checkout target branch
+          git fetch origin "$TARGET_BRANCH"
+          git checkout -b "$BACKPORT_BRANCH" "origin/$TARGET_BRANCH"
+
+          # Get the merge commit SHA
+          MERGE_COMMIT="${{ github.event.pull_request.merge_commit_sha }}"
+
+          # Get all commits from the PR (excluding the merge commit itself)
+          # We use the PR base and head to find the commits
+          PR_COMMITS=$(git log --reverse --pretty=format:"%H" origin/${{ github.event.pull_request.base.ref }}..$MERGE_COMMIT^)
+
+          echo "Commits to cherry-pick:"
+          echo "$PR_COMMITS"
+
+          # Cherry-pick each commit
+          CONFLICT=false
+          for commit in $PR_COMMITS; do
+            if ! git cherry-pick "$commit"; then
+              echo "Cherry-pick failed for commit $commit"
+              CONFLICT=true
+              break
+            fi
+          done
+
+          if [ "$CONFLICT" = true ]; then
+            git cherry-pick --abort || true
+            echo "conflict=true" >> $GITHUB_OUTPUT
+            echo "branch=$BACKPORT_BRANCH" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Push the backport branch
+          git push origin "$BACKPORT_BRANCH"
+
+          echo "branch=$BACKPORT_BRANCH" >> $GITHUB_OUTPUT
+          echo "conflict=false" >> $GITHUB_OUTPUT
+
+      - name: Create backport PR
+        if: steps.extract-branch.outputs.skip != 'true' && steps.cherry-pick.outputs.conflict != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
+          BACKPORT_BRANCH="${{ steps.cherry-pick.outputs.branch }}"
+          ORIGINAL_PR="${{ github.event.pull_request.number }}"
+          ORIGINAL_TITLE="${{ github.event.pull_request.title }}"
+
+          gh pr create \
+            --title "[Backport to $TARGET_BRANCH] $ORIGINAL_TITLE" \
+            --body "Backport of #$ORIGINAL_PR to \`$TARGET_BRANCH\`
+
+          ---
+
+          Original PR: #$ORIGINAL_PR
+          Original Author: @${{ github.event.pull_request.user.login }}
+
+          This PR was automatically created by the backport workflow." \
+            --base "$TARGET_BRANCH" \
+            --head "$BACKPORT_BRANCH" \
+            --label "backport"
+
+      - name: Comment on original PR (success)
+        if: steps.extract-branch.outputs.skip != 'true' && steps.cherry-pick.outputs.conflict != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
+          BACKPORT_BRANCH="${{ steps.cherry-pick.outputs.branch }}"
+
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "✅ Backport PR created successfully for branch \`$TARGET_BRANCH\`: branch \`$BACKPORT_BRANCH\`"
+
+      - name: Comment on original PR (conflict)
+        if: steps.extract-branch.outputs.skip != 'true' && steps.cherry-pick.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET_BRANCH="${{ steps.extract-branch.outputs.target_branch }}"
+
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "❌ Automated backport to \`$TARGET_BRANCH\` failed due to conflicts. Please backport manually."
