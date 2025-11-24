@@ -39,6 +39,8 @@ jobs:
             exit 1
           fi
 
+          echo "✅ PR #$PR_NUMBER exists"
+
           echo "Validating target branch '$TARGET_BRANCH'..."
 
           # Validate target branch exists
