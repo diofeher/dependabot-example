@@ -8,6 +8,8 @@ version: 2
 enable-beta-ecosystems: true
 updates:
   - package-ecosystem: "opentofu" # See documentation for possible values
+    cooldown:
+      default-days: 7
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"

@@ -15,6 +15,8 @@ jobs:
         with:
           app-id: ${{ vars.TAGGING_APP_ID }} # Use a variable for the App ID
           private-key: ${{ secrets.TAGGING_APP_PRIVATE_KEY }} # Use a secret for the private key
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
       - name: Tag repository
         env:
           GITHUB_TOKEN: ${{ steps.create-token.outputs.token }}
