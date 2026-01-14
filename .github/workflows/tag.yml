@@ -7,8 +7,6 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
       - name: Create GitHub App token
         id: create-token
         uses: actions/create-github-app-token@v2
@@ -17,11 +15,16 @@ jobs:
           private-key: ${{ secrets.TAGGING_APP_PRIVATE_KEY }} # Use a secret for the private key
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          token: ${{ steps.create-token.outputs.token }}
       - name: Tag repository
         env:
           GITHUB_TOKEN: ${{ steps.create-token.outputs.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
           git tag -a v1 -m "Tagging release ${{ github.ref_name }}"
           git push origin v1
