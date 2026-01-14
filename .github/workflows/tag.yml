@@ -1,0 +1,23 @@
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Create GitHub App token
+        id: create-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.TAGGING_APP_ID }} # Use a variable for the App ID
+          private-key: ${{ secrets.TAGGING_APP_PRIVATE_KEY }} # Use a secret for the private key
+      - name: Tag repository
+        env:
+          GITHUB_TOKEN: ${{ steps.create-token.outputs.token }}
+        run: |
+          git tag -a ${{ github.ref_name }} -m "Tagging release ${{ github.ref_name }}"
+          git push origin ${{ github.ref_name }}
