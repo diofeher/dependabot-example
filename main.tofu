@@ -22,9 +22,6 @@ terraform {
       source  = "hashicorp/local"
       version = ">= 2.5.2"
     }
-    terraform = {
-      source = "terraform.io/builtin/terraform"
-    }
   }
 }
 
