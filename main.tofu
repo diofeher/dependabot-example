@@ -34,15 +34,6 @@ variable "module_name" {
   default = "s3_bucket"
 }
 
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "6.22.1"
-    }
-  }
-}
-
 module "interpolated_module" {
   source = "./${var.module_name}"
 }
