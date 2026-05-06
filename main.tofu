@@ -29,15 +29,6 @@ terraform {
   }
 }
 
-variable "module_name" {
-  type    = string
-  default = "s3_bucket"
-}
-
-module "interpolated_module" {
-  source = "./${var.module_name}"
-}
-
 module "var_module" {
   source = var.module_name
 }
