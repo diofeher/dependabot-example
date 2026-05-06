@@ -28,7 +28,3 @@ terraform {
     }
   }
 }
-
-module "var_module" {
-  source = var.module_name
-}
