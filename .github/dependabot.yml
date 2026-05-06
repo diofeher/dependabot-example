@@ -6,7 +6,7 @@
 registries:
   opentofu-org:
     type: terraform_registry
-    url: https://test-another.com
+    url: test-another.com
     token: xxx
 
 # Triggering!
