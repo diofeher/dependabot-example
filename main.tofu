@@ -28,3 +28,7 @@ terraform {
     }
   }
 }
+
+module "example" {
+  source = "oci://ghcr.io/diofeher/test-module?tag=1.0.0"
+}
