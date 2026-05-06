@@ -22,10 +22,6 @@ terraform {
       source  = "hashicorp/local"
       version = ">= 2.5.2"
     }
-    
-    myprovider = {
-      source = "test-another.com/somenamespace/myprovider"
-    }
   }
 }
 
