@@ -3,11 +3,11 @@
 # Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
-registries:
-  opentofu-org:
-    type: terraform-registry
-    url: test-another.com
-    token: xxx
+# registries:
+#   opentofu-org:
+#     type: terraform-registry
+#     url: test-another.com
+#     token: xxx
 
 # Triggering!
 version: 2
