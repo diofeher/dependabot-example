@@ -26,5 +26,5 @@ terraform {
 }
 
 module "example" {
-  source  = "oci://ghcr.io/diofeher/test-module/?tag=v1.0.0"
+  source  = "oci://ghcr.io/diofeher/test-module?tag=v1.0.0"
 }
