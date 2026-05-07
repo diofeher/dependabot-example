@@ -5,7 +5,7 @@
 
 registries:
   opentofu-org:
-    type: terraform_registry
+    type: terraform-registry
     url: test-another.com
     token: xxx
 
