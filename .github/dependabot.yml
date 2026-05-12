@@ -6,7 +6,7 @@
 registries:
   ghcr-io:
     type: terraform-registry
-    url: ghcr.io
+    url: https://ghcr.io
     token: ${{ secrets.PAT_PACKAGES }}
 
 # Triggering!
