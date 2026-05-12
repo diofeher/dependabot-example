@@ -16,5 +16,7 @@ updates:
     cooldown:
       default-days: 7
     directory: "/" # Location of package manifests
+    registries:
+      - ghcr-io
     schedule:
       interval: "weekly"
