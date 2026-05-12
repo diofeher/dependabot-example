@@ -1,28 +1,28 @@
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-jobs:
-  tag:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create GitHub App token
-        id: create-token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.TAGGING_APP_ID }} # Use a variable for the App ID
-          private-key: ${{ secrets.TAGGING_APP_PRIVATE_KEY }} # Use a secret for the private key
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          token: ${{ steps.create-token.outputs.token }}
-      - name: Tag repository
-        env:
-          GITHUB_TOKEN: ${{ steps.create-token.outputs.token }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-          git tag -a v1 -m "Tagging release ${{ github.ref_name }}"
-          git push origin -f v1
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches:
+#       - main
+# jobs:
+#   tag:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Create GitHub App token
+#         id: create-token
+#         uses: actions/create-github-app-token@v2
+#         with:
+#           app-id: ${{ vars.TAGGING_APP_ID }} # Use a variable for the App ID
+#           private-key: ${{ secrets.TAGGING_APP_PRIVATE_KEY }} # Use a secret for the private key
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+#         with:
+#           token: ${{ steps.create-token.outputs.token }}
+#       - name: Tag repository
+#         env:
+#           GITHUB_TOKEN: ${{ steps.create-token.outputs.token }}
+#         run: |
+#           git config user.name "github-actions[bot]"
+#           git config user.email "github-actions[bot]@users.noreply.github.com"
+#           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+#           git tag -a v1 -m "Tagging release ${{ github.ref_name }}"
+#           git push origin -f v1
