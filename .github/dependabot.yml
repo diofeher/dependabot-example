@@ -5,9 +5,10 @@
 
 registries:
   ghcr-io:
-    type: terraform-registry
+    type: docker-registry
     url: https://ghcr.io
-    token: ${{ secrets.PAT_PACKAGES }}
+    username: diofeher
+    password: ${{ secrets.PAT_PACKAGES }}
 
 # Triggering!
 version: 2
