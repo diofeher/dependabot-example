@@ -1,6 +1,5 @@
 locals {
-  aws_version = "5.80.0"
-  google_vers = "6.12.0"
+  module_version = "6.5.0"
 }
 
 terraform {
@@ -9,15 +8,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = local.aws_version
-    }
-    github = {
-      source  = "integrations/github"
-      version = ">= 6.3.1"
-    }
-    google = {
-      source  = "hashicorp/google"
-      version = "${local.google_vers}"
+      version = ">= 6.0.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
@@ -32,4 +23,14 @@ terraform {
 
 module "example" {
   source  = "oci://ghcr.io/diofeher/test-module?tag=1.0.0"
+}
+
+module "aws" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = local.module_version
+}
+
+module "aws2" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = "${local.module_version}"
 }
