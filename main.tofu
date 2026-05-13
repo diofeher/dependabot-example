@@ -1,10 +1,15 @@
+locals {
+  aws_version = "5.80.0"
+  google_vers = "6.12.0"
+}
+
 terraform {
   required_version = ">= 1.9.0"
 
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.80.0"
+      version = local.aws_version
     }
     github = {
       source  = "integrations/github"
@@ -12,7 +17,7 @@ terraform {
     }
     google = {
       source  = "hashicorp/google"
-      version = ">= 6.12.0"
+      version = "${local.google_vers}"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
