@@ -21,16 +21,16 @@ terraform {
   }
 }
 
-module "example" {
-  source  = "oci://ghcr.io/diofeher/test-module?tag=1.0.0"
-}
+# module "example" {
+#  source  = "oci://ghcr.io/diofeher/test-module?tag=1.0.0"
+# }
 
-module "aws" {
-  source = "terraform-aws-modules/vpc/aws"
-  version = local.module_version
-}
+# module "aws" {
+#   source = "terraform-aws-modules/vpc/aws"
+#   version = local.module_version
+# }
 
-module "aws2" {
-  source = "terraform-aws-modules/vpc/aws"
-  version = "${local.module_version}"
-}
+# module "aws2" {
+#  source = "terraform-aws-modules/vpc/aws"
+#  version = "${local.module_version}"
+# }
