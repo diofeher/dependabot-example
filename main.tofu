@@ -8,7 +8,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "6.45.0"
+      version = "6.43.0"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
@@ -21,16 +21,16 @@ terraform {
   }
 }
 
-module "example" {
-  source  = "oci://ghcr.io/diofeher/test-module?tag=1.0.0"
-}
+# module "example" {
+#  source  = "oci://ghcr.io/diofeher/test-module?tag=1.0.0"
+# }
 
-module "aws" {
-  source = "terraform-aws-modules/vpc/aws"
-  version = local.module_version
-}
+# module "aws" {
+#   source = "terraform-aws-modules/vpc/aws"
+#   version = local.module_version
+# }
 
-module "aws2" {
-  source = "terraform-aws-modules/vpc/aws"
-  version = "${local.module_version}"
-}
+# module "aws2" {
+#  source = "terraform-aws-modules/vpc/aws"
+#  version = "${local.module_version}"
+# }
